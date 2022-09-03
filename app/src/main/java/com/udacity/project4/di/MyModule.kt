@@ -1,10 +1,10 @@
 package com.udacity.project4.di
 
-import com.udacity.project4.locationreminders.data.ReminderDataSource
-import com.udacity.project4.locationreminders.data.local.LocalDB
-import com.udacity.project4.locationreminders.data.local.RemindersLocalRepository
-import com.udacity.project4.locationreminders.reminderslist.RemindersListViewModel
-import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
+import com.udacity.project4.db.ReminderDataSource
+import com.udacity.project4.db.LocalDB
+import com.udacity.project4.db.RemindersLocalRepository
+import com.udacity.project4.ui.locationreminders.reminderslist.RemindersListViewModel
+import com.udacity.project4.ui.locationreminders.savereminder.SaveReminderViewModel
 import org.koin.android.ext.koin.androidApplication
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module

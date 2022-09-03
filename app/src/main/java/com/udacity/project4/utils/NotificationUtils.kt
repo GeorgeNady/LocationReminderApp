@@ -9,12 +9,12 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.TaskStackBuilder
 import com.udacity.project4.BuildConfig
 import com.udacity.project4.R
-import com.udacity.project4.locationreminders.ReminderDescriptionActivity
-import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
+import com.udacity.project4.ui.locationreminders.ReminderDescriptionActivity
+import com.udacity.project4.ui.locationreminders.reminderslist.ReminderDataDomain
 
 private const val NOTIFICATION_CHANNEL_ID = BuildConfig.APPLICATION_ID + ".channel"
 
-fun sendNotification(context: Context, reminderDataItem: ReminderDataItem) {
+fun sendNotification(context: Context, reminderDataDomain: ReminderDataDomain) {
     val notificationManager = context
         .getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -31,7 +31,7 @@ fun sendNotification(context: Context, reminderDataItem: ReminderDataItem) {
         notificationManager.createNotificationChannel(channel)
     }
 
-    val intent = ReminderDescriptionActivity.newIntent(context.applicationContext, reminderDataItem)
+    val intent = ReminderDescriptionActivity.newIntent(context.applicationContext, reminderDataDomain)
 
     //create a pending intent that opens ReminderDescriptionActivity when the user clicks on the notification
     val stackBuilder = TaskStackBuilder.create(context)
@@ -43,8 +43,8 @@ fun sendNotification(context: Context, reminderDataItem: ReminderDataItem) {
 //    build the notification object with the data to be shown
     val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
         .setSmallIcon(R.mipmap.ic_launcher)
-        .setContentTitle(reminderDataItem.title)
-        .setContentText(reminderDataItem.location)
+        .setContentTitle(reminderDataDomain.title)
+        .setContentText(reminderDataDomain.location)
         .setContentIntent(notificationPendingIntent)
         .setAutoCancel(true)
         .build()
