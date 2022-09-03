@@ -26,7 +26,7 @@ import java.util.*
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     //Use Koin to get the view model of the SaveReminder
-    override val _viewModel: SaveReminderViewModel by inject()
+    override val baseViewModel: SaveReminderViewModel by inject()
 
     private lateinit var binding: FragmentSelectLocationBinding
 
@@ -46,7 +46,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         binding =
                 DataBindingUtil.inflate(inflater, R.layout.fragment_select_location, container, false)
 
-        binding.viewModel = _viewModel
+        binding.viewModel = baseViewModel
         binding.lifecycleOwner = this
 
         setHasOptionsMenu(true)
@@ -157,11 +157,11 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
 
             if (this::pointOfInterest.isInitialized){
-                _viewModel.latitude.value = pointOfInterest.latLng.latitude
-                _viewModel.longitude.value = pointOfInterest.latLng.longitude
-                _viewModel.reminderSelectedLocationStr.value = pointOfInterest.name
-                _viewModel.selectedPOI.value = pointOfInterest
-                _viewModel.navigationCommand.value = NavigationCommand.To(SelectLocationFragmentDirections.actionSelectLocationFragmentToSaveReminderFragment())
+                baseViewModel.latitude.value = pointOfInterest.latLng.latitude
+                baseViewModel.longitude.value = pointOfInterest.latLng.longitude
+                baseViewModel.reminderSelectedLocationStr.value = pointOfInterest.name
+                baseViewModel.selectedPOI.value = pointOfInterest
+                baseViewModel.navigationCommand.value = NavigationCommand.To(SelectLocationFragmentDirections.actionSelectLocationFragmentToSaveReminderFragment())
             }else{
                 Toast.makeText(context, "Please select a location", Toast.LENGTH_LONG).show()
             }

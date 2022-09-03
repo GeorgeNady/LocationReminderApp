@@ -7,15 +7,15 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.firebase.auth.FirebaseAuth
+import com.udacity.project4.R
 import com.udacity.project4.authentication.AuthenticationViewModel.AuthenticationState.AUTHENTICATED
 import com.udacity.project4.databinding.ActivityAuthenticationBinding
 import com.udacity.project4.locationreminders.RemindersActivity
-
-//Y import timber.log.Timber
 
 /**
  * This class should be the starting point of the app, It asks the users to sign in / register, and redirects the
@@ -35,6 +35,7 @@ class AuthenticationActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(binding.root)
 
         with(binding) {
             viewModel.authenticationState.observe(this@AuthenticationActivity, authObserver())
@@ -85,8 +86,10 @@ class AuthenticationActivity : AppCompatActivity() {
         // If users choose to register with their email,
         // they will need to create a password as well.
         val providers = arrayListOf(
-            AuthUI.IdpConfig.EmailBuilder().build(),
-            AuthUI.IdpConfig.GoogleBuilder().build()
+            AuthUI.IdpConfig.EmailBuilder().build(), AuthUI.IdpConfig.GoogleBuilder().build()
+
+            // This is where you can provide more ways for users to register and
+            // sign in.
         )
 
         // Create and launch sign-in intent.
