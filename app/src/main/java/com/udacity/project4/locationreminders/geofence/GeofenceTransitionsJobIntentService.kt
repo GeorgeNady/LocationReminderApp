@@ -57,7 +57,6 @@ class GeofenceTransitionsJobIntentService : JobIntentService(), CoroutineScope {
 
     }
 
-
     private fun sendNotification(triggeringGeofences: List<Geofence>) {
         val requestId = triggeringGeofences[0].requestId
         Log.d("send notification", "true")
