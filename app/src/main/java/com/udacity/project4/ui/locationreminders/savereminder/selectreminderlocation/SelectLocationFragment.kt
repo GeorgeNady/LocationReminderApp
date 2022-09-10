@@ -5,6 +5,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -22,6 +23,7 @@ import com.udacity.project4.ui.locationreminders.savereminder.SaveReminderViewMo
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
 import java.util.*
+import kotlin.properties.Delegates
 
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
@@ -35,7 +37,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         private const val FINE_LOCATION_ACCESS_REQUEST_CODE = 1
     }
 
-    private lateinit var pointOfInterest: PointOfInterest
+    private var latitude = 0.0
+    private var longitude = 0.0
+    private lateinit var locationName: String
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -67,11 +71,37 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, zoomLevel))
         map.uiSettings.isZoomControlsEnabled = true
 
+        // Map Styling added #done
+        setMapStyle(map)
+
         enableUserLocation()
+
+        // user can select a location or POI #done
+        setLocationClick(map)
         setPoiClickListener(map)
 
         onLocationSelected()
 
+    }
+
+    // Map Styling added #done
+    private fun setMapStyle(map: GoogleMap) {
+        try {
+            // Customize the styling of the base map using a JSON object defined
+            // in a raw resource file.
+            val success = map.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(
+                    requireActivity(),
+                    R.raw.map_style
+                )
+            )
+
+            if (!success) {
+                Log.e(this::class.simpleName, "Style parsing failed.")
+            }
+        } catch (e:Exception) {
+            Log.e(this::class.simpleName, "Can't find style. Error: ", e)
+        }
     }
 
     private fun setPoiClickListener(map: GoogleMap) {
@@ -79,7 +109,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         map.setOnPoiClickListener { poi ->
 
             map.clear()
-            pointOfInterest = poi
+            latitude = poi.latLng.latitude
+            longitude = poi.latLng.longitude
+            locationName = poi.name
 
             val poiMarker = map.addMarker(
                 MarkerOptions()
@@ -102,16 +134,31 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         }
     }
 
+    // user can select a location or POI #done
     private fun setLocationClick(map: GoogleMap) {
-
         map.setOnMapClickListener { latLng ->
             // A Snippet is Additional text that's displayed below the title.
             map.clear()
+            // set lat
+            latitude = latLng.latitude
+            // set long
+            longitude = latLng.longitude
+            // set name
+            locationName = "random place"
             val snippet = String.format(
                 Locale.getDefault(),
                 getString(R.string.lat_long_snippet),
                 latLng.latitude,
                 latLng.longitude
+            )
+
+            map.addCircle(
+                CircleOptions()
+                    .center(latLng)
+                    .radius(200.0)
+                    .strokeColor(Color.argb(255, 255, 0, 0))
+                    .fillColor(Color.argb(64, 255, 0, 0)).strokeWidth(4F)
+
             )
 
             map.addMarker(
@@ -128,13 +175,17 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     private fun onLocationSelected() {
 
         binding.saveButton.setOnClickListener {
-            if (this::pointOfInterest.isInitialized) {
-                baseViewModel.latitude.value = pointOfInterest.latLng.latitude
-                baseViewModel.longitude.value = pointOfInterest.latLng.longitude
-                baseViewModel.reminderSelectedLocationStr.value = pointOfInterest.name
-                baseViewModel.selectedPOI.value = pointOfInterest
-                baseViewModel.navigationCommand.value =
-                    NavigationCommand.To(SelectLocationFragmentDirections.actionSelectLocationFragmentToSaveReminderFragment())
+            if (
+                latitude != 0.0 && longitude != 0.0 && this::locationName.isInitialized
+            ) {
+                with(baseViewModel) {
+                    latitude.value = this@SelectLocationFragment.latitude
+                    longitude.value = this@SelectLocationFragment.longitude
+                    reminderSelectedLocationStr.value = locationName
+                    navigationCommand.value =
+                        NavigationCommand.To(SelectLocationFragmentDirections.actionSelectLocationFragmentToSaveReminderFragment())
+                }
+
             } else {
                 Toast.makeText(context, "Please select a location", Toast.LENGTH_LONG).show()
             }

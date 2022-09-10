@@ -14,7 +14,9 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
+import androidx.fragment.app.Fragment
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.udacity.project4.base.BaseFragment
@@ -75,24 +77,21 @@ class SaveReminderFragment : BaseFragment() {
         return foregroundLocationApproved && backgroundPermissionApproved
     }
 
-    @TargetApi(29)
     private fun requestForegroundAndBackgroundLocationPermissions() {
         if (foregroundAndBackgroundLocationPermissionApproved())
             return
         var permissionsArray = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
         val resultCode = when {
             runningQOrLater -> {
-                permissionsArray += Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                if (SDK_INT >= Q) {
+                    permissionsArray += Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                }
                 REQUEST_FOREGROUND_AND_BACKGROUND_PERMISSION_RESULT_CODE
             }
             else -> REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
         }
         Log.d(TAG, "Request foreground only location permission")
-        ActivityCompat.requestPermissions(
-            requireActivity(),
-            permissionsArray,
-            resultCode
-        )
+        requestPermissions(permissionsArray, resultCode)
     }
 
     override fun onRequestPermissionsResult(
@@ -127,10 +126,10 @@ class SaveReminderFragment : BaseFragment() {
         locationSettingsResponseTask.addOnFailureListener { exception ->
             if (exception is ResolvableApiException && resolve) {
                 try {
-                    exception.startResolutionForResult(
-                        requireActivity(),
-                        REQUEST_TURN_DEVICE_LOCATION_ON
-                    )
+                   startIntentSenderForResult(
+                       exception.resolution.intentSender, REQUEST_TURN_DEVICE_LOCATION_ON,
+                       null, 0, 0, 0, null
+                   )
                 } catch (sendEx: IntentSender.SendIntentException) {
                     Log.d(TAG, "Error getting location settings resolution: " + sendEx.message)
                 }
@@ -178,23 +177,25 @@ class SaveReminderFragment : BaseFragment() {
                 PendingIntent.FLAG_UPDATE_CURRENT
             )
 
-            geofencingClient.removeGeofences(geofencePendingIntent)?.run {
-                addOnCompleteListener {
-                    geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
-                        addOnSuccessListener {
+            geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
+                addOnSuccessListener {
 
-                            Log.e("Add Geofence", geofence.requestId)
+                    Log.e("Add Geofence", geofence.requestId)
 
-                        }
-                        addOnFailureListener {
+                }
+                addOnFailureListener {
 
-                            if ((it.message != null)) {
-                                Log.w(TAG, it.message!!)
-                            }
-                        }
+                    if ((it.message != null)) {
+                        Log.w(TAG, it.message!!)
                     }
                 }
             }
+
+//            geofencingClient.removeGeofences(geofencePendingIntent)?.run {
+//                addOnCompleteListener {
+//
+//                }
+//            }
         }
     }
 
