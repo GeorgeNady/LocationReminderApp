@@ -2,7 +2,10 @@ package com.udacity.project4.db
 
 import com.udacity.project4.db.dto.ReminderTable
 import com.udacity.project4.db.dto.Resources
-import kotlinx.coroutines.*
+import com.udacity.project4.utils.wrapEspressoIdlingResource
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Concrete implementation of a data source as a db.
@@ -22,10 +25,12 @@ class RemindersLocalRepository(
      * @return Result the holds a Success with all the reminders or an Error object with the error message
      */
     override suspend fun getReminders(): Resources<List<ReminderTable>> = withContext(ioDispatcher) {
-        return@withContext try {
-            Resources.Success(locationRemindersDao.getReminders())
-        } catch (ex: Exception) {
-            Resources.Error(ex.localizedMessage)
+        wrapEspressoIdlingResource {
+            return@withContext try {
+                Resources.Success(locationRemindersDao.getReminders())
+            } catch (ex: Exception) {
+                Resources.Error(ex.localizedMessage)
+            }
         }
     }
 
@@ -33,10 +38,11 @@ class RemindersLocalRepository(
      * Insert a reminder in the db.
      * @param reminder the reminder to be inserted
      */
-    override suspend fun saveReminder(reminder: ReminderTable) =
+    override suspend fun saveReminder(reminder: ReminderTable) = wrapEspressoIdlingResource {
         withContext(ioDispatcher) {
             locationRemindersDao.saveReminder(reminder)
         }
+    }
 
     /**
      * Get a reminder by its id
@@ -44,15 +50,17 @@ class RemindersLocalRepository(
      * @return Result the holds a Success object with the Reminder or an Error object with the error message
      */
     override suspend fun getReminder(id: String): Resources<ReminderTable> = withContext(ioDispatcher) {
-        try {
-            val reminder = locationRemindersDao.getReminderById(id)
-            if (reminder != null) {
-                return@withContext Resources.Success(reminder)
-            } else {
-                return@withContext Resources.Error("Reminder not found!")
+        wrapEspressoIdlingResource {
+            try {
+                val reminder = locationRemindersDao.getReminderById(id)
+                if (reminder != null) {
+                    return@withContext Resources.Success(reminder)
+                } else {
+                    return@withContext Resources.Error("Reminder not found!")
+                }
+            } catch (e: Exception) {
+                return@withContext Resources.Error(e.localizedMessage)
             }
-        } catch (e: Exception) {
-            return@withContext Resources.Error(e.localizedMessage)
         }
     }
 
@@ -60,8 +68,10 @@ class RemindersLocalRepository(
      * Deletes all the reminders in the db
      */
     override suspend fun deleteAllReminders() {
-        withContext(ioDispatcher) {
-            locationRemindersDao.deleteAllReminders()
+        wrapEspressoIdlingResource {
+            withContext(ioDispatcher) {
+                locationRemindersDao.deleteAllReminders()
+            }
         }
     }
 }
