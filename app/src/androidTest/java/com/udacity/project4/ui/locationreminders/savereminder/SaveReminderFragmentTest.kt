@@ -17,6 +17,7 @@ import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.rules.activityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import com.google.android.gms.maps.model.LatLng
 import com.udacity.project4.R
 import com.udacity.project4.db.LocalDB
 import com.udacity.project4.db.ReminderDataSource
@@ -48,6 +49,8 @@ class SaveReminderFragmentTest {
 
     private lateinit var saveReminderViewModel: SaveReminderViewModel
     private lateinit var decorView: View
+
+    private val giza = LatLng(21.000,20.000)
 
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
@@ -122,33 +125,30 @@ class SaveReminderFragmentTest {
 
     @Test
     fun saveReminder_succeeds() {
-        val reminder = getReminder()
+        val reminder=ReminderDataDomain(
+            "Title",
+            "Description",
+            "Bengaluru",
+            giza.latitude,
+            giza.longitude
+        )
 
-
-        val navController = Mockito.mock(NavController::class.java)
-        val scenario =
-            launchFragmentInContainer<SaveReminderFragment>(Bundle.EMPTY, R.style.AppTheme)
-
+        val navController=Mockito.mock(NavController::class.java)
+        val scenario= launchFragmentInContainer<SaveReminderFragment>(Bundle.EMPTY,R.style.AppTheme)
         scenario.onFragment {
-            Navigation.setViewNavController(it.view!!, navController)
+            Navigation.setViewNavController(it.view!!,navController)
         }
-
 
         onView(withId(R.id.reminderTitle)).perform(ViewActions.typeText(reminder.title))
         onView(withId(R.id.reminderDescription)).perform(ViewActions.typeText(reminder.description))
 
-
         saveReminderViewModel.saveReminder(reminder)
 
-        Espresso.closeSoftKeyboard()
+        assertThat(saveReminderViewModel.showToast.getOrAwaitValue(),`is`("Reminder Saved !"))
 
-        // onView(withId(R.id.saveReminder)).perform(ViewActions.click())
-
-
-       assertThat(saveReminderViewModel.showToast.getOrAwaitValue(), `is` ("Reminder Saved !"))
-//        onView(withText("R.id.ToastText"))
-//            .inRoot(RootMatchers.withDecorView(Matchers.`is`(decorView)))// Here you use decorView
-//            .check(matches(isDisplayed()))
+        onView(withText("R.id.ToastText"))
+            .inRoot(RootMatchers.withDecorView(Matchers.`is`(decorView)))// Here you use decorView
+            .check(matches(isDisplayed()))
 
     }
 }

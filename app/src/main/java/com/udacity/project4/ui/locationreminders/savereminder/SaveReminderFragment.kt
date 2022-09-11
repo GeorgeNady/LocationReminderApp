@@ -19,6 +19,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult
 import androidx.core.app.ActivityCompat
+import androidx.navigation.fragment.findNavController
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.udacity.project4.base.BaseFragment
@@ -217,10 +218,11 @@ class SaveReminderFragment : BaseFragment() {
 
             geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent).run {
                 addOnSuccessListener {
+                    Log.d(TAG, "Location added!!!")
                     baseViewModel.validateAndSaveReminder(reminderData)
-                    Log.i(TAG, "Geofence added, id: ${reminderData.id}")
                 }
                 addOnFailureListener {
+                    Toast.makeText(requireContext(), "Failed to add location!!! Try again later!", Toast.LENGTH_SHORT).show()
                     if (it.message != null) {
                         Log.i(TAG, it.message.toString())
                     }
