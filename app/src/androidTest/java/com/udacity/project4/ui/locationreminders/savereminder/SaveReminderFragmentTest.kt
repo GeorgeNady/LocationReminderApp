@@ -1,33 +1,31 @@
 package com.udacity.project4.ui.locationreminders.savereminder
 
 import android.os.Bundle
-
+import android.view.View
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions
-
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.RootMatchers
 import androidx.test.espresso.matcher.ViewMatchers
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
-
+import androidx.test.espresso.matcher.ViewMatchers.*
+import androidx.test.ext.junit.rules.activityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-
 import com.udacity.project4.R
-import com.udacity.project4.ui.locationreminders.data.ReminderDataSource
-
-import com.udacity.project4.ui.locationreminders.data.local.LocalDB
-import com.udacity.project4.ui.locationreminders.data.local.RemindersLocalRepository
-
-import com.udacity.project4.ui.locationreminders.reminderslist.ReminderDataItem
-
+import com.udacity.project4.db.LocalDB
+import com.udacity.project4.db.ReminderDataSource
+import com.udacity.project4.db.RemindersLocalRepository
+import com.udacity.project4.ui.locationreminders.RemindersActivity
+import com.udacity.project4.ui.locationreminders.reminderslist.ReminderDataDomain
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-
+import org.hamcrest.Matchers
+import org.hamcrest.Matchers.not
 import org.hamcrest.core.Is.`is`
 import org.junit.Assert.assertThat
 import org.junit.Before
@@ -49,9 +47,13 @@ import org.mockito.Mockito
 class SaveReminderFragmentTest {
 
     private lateinit var saveReminderViewModel: SaveReminderViewModel
+    private lateinit var decorView: View
 
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
+
+    @get:Rule
+    var activityRule = activityScenarioRule<RemindersActivity>()
 
 
     @Before
@@ -66,8 +68,8 @@ class SaveReminderFragmentTest {
             //Declare a ViewModel - be later inject into Fragment with dedicated injector using by viewModel()
             viewModel {
                 SaveReminderViewModel(
-                        ApplicationProvider.getApplicationContext(),
-                        get() as ReminderDataSource
+                    ApplicationProvider.getApplicationContext(),
+                    get() as ReminderDataSource
                 )
             }
 
@@ -80,6 +82,11 @@ class SaveReminderFragmentTest {
             modules(listOf(myModule))
         }
 
+        activityRule.scenario.onActivity {
+            decorView = it.window.decorView
+        }
+
+
         saveReminderViewModel = GlobalContext.get().koin.get()
 
     }
@@ -89,7 +96,7 @@ class SaveReminderFragmentTest {
     fun noTitle_fails() {
         val navController = Mockito.mock(NavController::class.java)
         val scenario =
-                launchFragmentInContainer<SaveReminderFragment>(Bundle.EMPTY, R.style.AppTheme)
+            launchFragmentInContainer<SaveReminderFragment>(Bundle.EMPTY, R.style.AppTheme)
 
 
 
@@ -99,28 +106,28 @@ class SaveReminderFragmentTest {
 
         onView(ViewMatchers.withId(R.id.saveReminder)).perform(ViewActions.click())
         onView(withId(R.id.snackbar_text))
-                .check(matches(withText(R.string.err_enter_title)))
+            .check(matches(withText(R.string.err_enter_title)))
 
     }
 
-    private fun getReminder(): ReminderDataItem {
-        return ReminderDataItem(
-                title = "title",
-                description = "desc",
-                location = "loc",
-                latitude = 47.5456551,
-                longitude = 122.0101731)
+    private fun getReminder(): ReminderDataDomain {
+        return ReminderDataDomain(
+            title = "title",
+            description = "desc",
+            location = "loc",
+            latitude = 47.5456551,
+            longitude = 122.0101731
+        )
     }
 
     @Test
     fun saveReminder_succeeds() {
-       val reminder = getReminder()
-
+        val reminder = getReminder()
 
 
         val navController = Mockito.mock(NavController::class.java)
         val scenario =
-                launchFragmentInContainer<SaveReminderFragment>(Bundle.EMPTY, R.style.AppTheme)
+            launchFragmentInContainer<SaveReminderFragment>(Bundle.EMPTY, R.style.AppTheme)
 
         scenario.onFragment {
             Navigation.setViewNavController(it.view!!, navController)
@@ -131,13 +138,17 @@ class SaveReminderFragmentTest {
         onView(withId(R.id.reminderDescription)).perform(ViewActions.typeText(reminder.description))
 
 
-       saveReminderViewModel.saveReminder(reminder)
+        saveReminderViewModel.saveReminder(reminder)
 
-        //Espresso.closeSoftKeyboard()
+        Espresso.closeSoftKeyboard()
 
-       // onView(withId(R.id.saveReminder)).perform(ViewActions.click())
-      // onView(withText(saveReminderViewModel.showToast.getOrAwaitValue())).check(matches(withText(R.string.reminder_saved)))
+        // onView(withId(R.id.saveReminder)).perform(ViewActions.click())
+
 
        assertThat(saveReminderViewModel.showToast.getOrAwaitValue(), `is` ("Reminder Saved !"))
+//        onView(withText("R.id.ToastText"))
+//            .inRoot(RootMatchers.withDecorView(Matchers.`is`(decorView)))// Here you use decorView
+//            .check(matches(isDisplayed()))
+
     }
 }

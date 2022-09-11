@@ -124,6 +124,8 @@ dependencies {
     implementation "com.google.android.gms:play-services-maps:$playServicesVersion"
 
     implementation 'androidx.multidex:multidex:2.0.1'
+    androidTestImplementation project(path: ':app')
+
 
 }
 

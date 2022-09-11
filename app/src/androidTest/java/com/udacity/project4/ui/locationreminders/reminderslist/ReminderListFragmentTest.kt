@@ -16,10 +16,10 @@ import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.udacity.project4.R
-import com.udacity.project4.ui.locationreminders.data.ReminderDataSource
-import com.udacity.project4.ui.locationreminders.data.dto.ReminderDTO
-import com.udacity.project4.ui.locationreminders.data.local.LocalDB
-import com.udacity.project4.ui.locationreminders.data.local.RemindersLocalRepository
+import com.udacity.project4.db.LocalDB
+import com.udacity.project4.db.ReminderDataSource
+import com.udacity.project4.db.RemindersLocalRepository
+import com.udacity.project4.db.dto.ReminderTable
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -85,8 +85,8 @@ class ReminderListFragmentTest {
      }
     }
 
-    private fun getReminder(): ReminderDTO {
-        return ReminderDTO(
+    private fun getReminder(): ReminderTable {
+        return ReminderTable(
                 title = "title",
                 description = "desc",
                 location = "loc",

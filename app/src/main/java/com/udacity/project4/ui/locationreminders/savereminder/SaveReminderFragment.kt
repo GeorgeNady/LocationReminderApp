@@ -14,9 +14,11 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.udacity.project4.base.BaseFragment
@@ -27,6 +29,7 @@ import com.udacity.project4.ui.locationreminders.geofence.GeofenceConstants
 import com.udacity.project4.ui.locationreminders.reminderslist.ReminderDataDomain
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
+import java.util.*
 
 class SaveReminderFragment : BaseFragment() {
 
