@@ -65,10 +65,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         map = googleMap
 
         //Default location
-        val sydney = LatLng(-34.0, 151.0)
+        val myLocation = LatLng(-34.0, 151.0)
         val zoomLevel = 15f
-        map.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, zoomLevel))
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocation, zoomLevel))
         map.uiSettings.isZoomControlsEnabled = true
 
         // Map Styling added #done
