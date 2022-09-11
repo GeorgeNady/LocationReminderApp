@@ -6,7 +6,7 @@ import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.udacity.project4.ui.locationreminders.MainCoroutineRule
 import com.udacity.project4.ui.locationreminders.data.FakeDataSource
-import com.udacity.project4.ui.locationreminders.data.dto.ReminderDTO
+import com.udacity.project4.db.dto.ReminderTable
 import com.udacity.project4.ui.locationreminders.getOrAwaitValue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -62,8 +62,8 @@ class RemindersListViewModelTest {
 
         assertThat(remindersListViewModel.showNoData.getOrAwaitValue(), `is`(true))
     }
-    private fun getReminder(): ReminderDTO {
-        return ReminderDTO(
+    private fun getReminder(): ReminderTable {
+        return ReminderTable(
                 title = "title",
                 description = "desc",
                 location = "loc",

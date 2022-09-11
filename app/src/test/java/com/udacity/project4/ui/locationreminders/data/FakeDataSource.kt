@@ -1,9 +1,11 @@
 package com.udacity.project4.ui.locationreminders.data
 
-import com.udacity.project4.ui.locationreminders.data.dto.ReminderDTO
+import com.udacity.project4.db.ReminderDataSource
+import com.udacity.project4.db.dto.ReminderTable
+import com.udacity.project4.db.dto.Resources
 
 
-class FakeDataSource(var reminders: MutableList<ReminderDTO> = mutableListOf()): ReminderDataSource {
+class FakeDataSource(var reminders: MutableList<ReminderTable> = mutableListOf()): ReminderDataSource {
 
 //    TODO: Create a fake data source to act as a double to the real data source
     private var shouldReturnError = false
@@ -12,7 +14,7 @@ class FakeDataSource(var reminders: MutableList<ReminderDTO> = mutableListOf()):
         this.shouldReturnError = shouldReturn
     }
 
-    override suspend fun saveReminder(reminder: ReminderDTO) {
+    override suspend fun saveReminder(reminder: ReminderTable) {
         reminders.add(reminder)
     }
 
@@ -20,31 +22,31 @@ class FakeDataSource(var reminders: MutableList<ReminderDTO> = mutableListOf()):
         reminders.clear()
     }
 
-    override suspend fun getReminders(): Result<List<ReminderDTO>> {
+    override suspend fun getReminders(): Resources<List<ReminderTable>> {
 
         if (shouldReturnError){
-            return Result.Error("Reminders not found", 404)
+            return Resources.Error("Reminders not found", 404)
         }else{
-            return return Result.Success(ArrayList(reminders))
+            return return Resources.Success(ArrayList(reminders))
         }
 
     }
 
 
-    override suspend fun getReminder(id: String): Result<ReminderDTO> {
+    override suspend fun getReminder(id: String): Resources<ReminderTable> {
 
         if(shouldReturnError){
 
-            return Result.Error("Error")
+            return Resources.Error("Error")
 
         }else{
 
             val reminder = reminders.find { it.id == id }
 
             if (reminder != null) {
-                 return Result.Success(reminder)
+                 return Resources.Success(reminder)
             } else {
-                return Result.Error("Reminder not found", 404)
+                return Resources.Error("Reminder not found", 404)
             }
 
         }

@@ -13,7 +13,7 @@ import com.udacity.project4.ui.locationreminders.MainCoroutineRule
 import com.udacity.project4.ui.locationreminders.data.FakeDataSource
 
 import com.udacity.project4.ui.locationreminders.getOrAwaitValue
-import com.udacity.project4.ui.locationreminders.reminderslist.ReminderDataItem
+import com.udacity.project4.ui.locationreminders.reminderslist.ReminderDataDomain
 
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -59,8 +59,8 @@ class SaveReminderViewModelTest {
     }
     //TODO: provide testing to the SaveReminderView and its live data objects
 
-    private fun getReminder(): ReminderDataItem {
-        return ReminderDataItem(
+    private fun getReminder(): ReminderDataDomain {
+        return ReminderDataDomain(
                 title = "title",
                 description = "desc",
                 location = "loc",
@@ -78,7 +78,7 @@ class SaveReminderViewModelTest {
     @Test
     fun saveReminder_withoutTitle() {
 
-        val reminder = ReminderDataItem(
+        val reminder = ReminderDataDomain(
                 title = "",
                 description = "desc",
                 location = "loc",
@@ -109,7 +109,7 @@ class SaveReminderViewModelTest {
     @Test
     fun saveReminder_withoutlocation() {
 
-        val reminder = ReminderDataItem(
+        val reminder = ReminderDataDomain(
                 title = "hey",
                 description = "hey",
                 location = "",
