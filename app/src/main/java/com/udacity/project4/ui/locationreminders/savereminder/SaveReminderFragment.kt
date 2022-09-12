@@ -100,20 +100,21 @@ class SaveReminderFragment : BaseFragment() {
              */
             saveReminder.setOnClickListener {
 
-                val title = baseViewModel.reminderTitle.value
-                val description = baseViewModel.reminderDescription.value
-                val locationName = baseViewModel.reminderSelectedLocationStr.value
-                val latitude = baseViewModel.latitude.value
-                val longitude = baseViewModel.longitude.value
+                with(baseViewModel) {
 
-                reminderData =
-                    ReminderDataDomain(title, description, locationName, latitude, longitude)
+                    val title = reminderTitle.value
+                    val description = reminderDescription.value
+                    val locationName = reminderSelectedLocationStr.value
+                    val latitude = latitude.value
+                    val longitude = longitude.value
 
-                val isValid = baseViewModel.validateAndSaveReminder(reminderData)
+                    reminderData =
+                        ReminderDataDomain(title, description, locationName, latitude, longitude)
 
-                if (isValid) {
-                    checkPermissionsAndStartGeofencing()
+                    if (validateAndSaveReminder(reminderData)) checkPermissionsAndStartGeofencing()
+
                 }
+
 
             }
         }

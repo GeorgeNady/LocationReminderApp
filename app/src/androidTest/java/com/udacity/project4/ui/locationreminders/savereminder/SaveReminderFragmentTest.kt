@@ -2,17 +2,22 @@ package com.udacity.project4.ui.locationreminders.savereminder
 
 import android.os.Bundle
 import android.view.View
+import android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+import android.view.WindowManager.LayoutParams.TYPE_TOAST
+import androidx.annotation.IntRange
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
+import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.Espresso
+import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.Root
+import androidx.test.espresso.ViewInteraction
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.RootMatchers
-import androidx.test.espresso.matcher.ViewMatchers
+import androidx.test.espresso.matcher.RootMatchers.withDecorView
 import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.rules.activityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -25,10 +30,12 @@ import com.udacity.project4.db.RemindersLocalRepository
 import com.udacity.project4.ui.locationreminders.RemindersActivity
 import com.udacity.project4.ui.locationreminders.reminderslist.ReminderDataDomain
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.hamcrest.Matchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
+import org.hamcrest.Description
 import org.hamcrest.Matchers.not
+import org.hamcrest.TypeSafeMatcher
 import org.hamcrest.core.Is.`is`
-import org.junit.Assert.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -41,6 +48,7 @@ import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import org.mockito.Mockito
 
+
 @RunWith(AndroidJUnit4::class)
 @ExperimentalCoroutinesApi
 //UI Testing
@@ -50,14 +58,13 @@ class SaveReminderFragmentTest {
     private lateinit var saveReminderViewModel: SaveReminderViewModel
     private lateinit var decorView: View
 
-    private val giza = LatLng(21.000,20.000)
+    private val giza = LatLng(21.000, 20.000)
 
     @get:Rule
     val instantTaskExecutorRule = InstantTaskExecutorRule()
 
     @get:Rule
     var activityRule = activityScenarioRule<RemindersActivity>()
-
 
     @Before
     fun initRepository() {
@@ -107,7 +114,7 @@ class SaveReminderFragmentTest {
             Navigation.setViewNavController(it.view!!, navController)
         }
 
-        onView(ViewMatchers.withId(R.id.saveReminder)).perform(ViewActions.click())
+        onView(withId(R.id.saveReminder)).perform(ViewActions.click())
         onView(withId(R.id.snackbar_text))
             .check(matches(withText(R.string.err_enter_title)))
 
@@ -124,31 +131,110 @@ class SaveReminderFragmentTest {
     }
 
     @Test
-    fun saveReminder_succeeds() {
-        val reminder=ReminderDataDomain(
+    fun saveReminder_succeeds()  = runBlockingTest {
+        val reminder = ReminderDataDomain(
             "Title",
             "Description",
-            "Bengaluru",
+            "Giza",
             giza.latitude,
             giza.longitude
         )
 
-        val navController=Mockito.mock(NavController::class.java)
-        val scenario= launchFragmentInContainer<SaveReminderFragment>(Bundle.EMPTY,R.style.AppTheme)
+        val navController = Mockito.mock(NavController::class.java)
+        val scenario =
+            launchFragmentInContainer<SaveReminderFragment>(Bundle.EMPTY, R.style.AppTheme)
         scenario.onFragment {
-            Navigation.setViewNavController(it.view!!,navController)
+            Navigation.setViewNavController(it.view!!, navController)
         }
 
         onView(withId(R.id.reminderTitle)).perform(ViewActions.typeText(reminder.title))
         onView(withId(R.id.reminderDescription)).perform(ViewActions.typeText(reminder.description))
 
-        saveReminderViewModel.saveReminder(reminder)
+        closeSoftKeyboard()
 
-        assertThat(saveReminderViewModel.showToast.getOrAwaitValue(),`is`("Reminder Saved !"))
+        runBlocking {
+            saveReminderViewModel.saveReminder(reminder)
+        }
 
-        onView(withText("R.id.ToastText"))
-            .inRoot(RootMatchers.withDecorView(Matchers.`is`(decorView)))// Here you use decorView
+        assertThat(saveReminderViewModel.showToast.getOrAwaitValue(), `is`("Reminder Saved !"))
+
+        onToast("Reminder Saved !").check(matches(isDisplayed()))
+
+        /*onView(withText("Reminder Saved !"))
+            .inRoot(withDecorView(not(`is`(decorView))))
+            .check(matches(isDisplayed()))*/
+
+
+    }
+
+    @Test
+    fun saveReminder_failed()  = runBlockingTest {
+        val reminder = ReminderDataDomain(
+            null,
+            "Description",
+            "Giza",
+            giza.latitude,
+            giza.longitude
+        )
+
+        val navController = Mockito.mock(NavController::class.java)
+        val scenario =
+            launchFragmentInContainer<SaveReminderFragment>(Bundle.EMPTY, R.style.AppTheme)
+        scenario.onFragment {
+            Navigation.setViewNavController(it.view!!, navController)
+        }
+
+        onView(withId(R.id.reminderDescription)).perform(ViewActions.typeText(reminder.description))
+
+        closeSoftKeyboard()
+
+        runBlocking {
+            saveReminderViewModel.saveReminder(reminder)
+        }
+
+        assertThat(saveReminderViewModel.showToast.getOrAwaitValue(), `is`("Reminder Saved !"))
+
+        // onToast("Reminder Saved !").check(matches(isDisplayed()))
+
+        onView(withText("Reminder Saved !"))
+            .inRoot(withDecorView(not(`is`(decorView))))
             .check(matches(isDisplayed()))
 
+
+    }
+
+}
+
+fun onToast(
+    text: Int,
+    @IntRange(from = 1) maximumRetries: Int = 5
+): ViewInteraction = onView(withText(text)).inRoot(ToastMatcher(maximumRetries))
+
+fun onToast(
+    text: String,
+    @IntRange(from = 1) maximumRetries: Int = 5
+): ViewInteraction = onView(withText(text)).inRoot(ToastMatcher(maximumRetries))
+
+class ToastMatcher(private val maximumRetries: Int) : TypeSafeMatcher<Root>() {
+
+    private var currentFailures: Int = 0
+
+    override fun describeTo(description: Description?) {
+        description?.appendText("no toast found after")
+    }
+
+    override fun matchesSafely(item: Root?): Boolean {
+        val type: Int? = item?.windowLayoutParams?.get()?.type
+
+        if(TYPE_TOAST == type || TYPE_APPLICATION_OVERLAY == type) {
+            val windowToken = item.decorView.windowToken
+            val appToken = item.decorView.applicationWindowToken
+
+            if(windowToken == appToken) {
+                return true
+            }
+        }
+
+        return ++currentFailures >= maximumRetries
     }
 }
