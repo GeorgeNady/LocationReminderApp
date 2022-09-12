@@ -181,8 +181,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     latitude.value = this@SelectLocationFragment.latitude
                     longitude.value = this@SelectLocationFragment.longitude
                     reminderSelectedLocationStr.value = locationName
-                    navigationCommand.value =
-                        NavigationCommand.To(SelectLocationFragmentDirections.actionSelectLocationFragmentToSaveReminderFragment())
+                    navigationCommand.value = NavigationCommand.Back
                 }
 
             } else {

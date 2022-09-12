@@ -18,6 +18,7 @@ import android.widget.Toast
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.common.api.ResolvableApiException
@@ -30,6 +31,7 @@ import com.udacity.project4.ui.locationreminders.geofence.GeofenceConstants
 import com.udacity.project4.ui.locationreminders.reminderslist.ReminderDataDomain
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
+import kotlin.math.log
 
 
 // Done: update it to the request permissions with registerForActivityResult()
@@ -107,8 +109,9 @@ class SaveReminderFragment : BaseFragment() {
                 reminderData =
                     ReminderDataDomain(title, description, locationName, latitude, longitude)
 
-                if (baseViewModel.validateAndSaveReminder(reminderData)) {
-                    //addGeofence(reminderData)
+                val isValid = baseViewModel.validateAndSaveReminder(reminderData)
+
+                if (isValid) {
                     checkPermissionsAndStartGeofencing()
                 }
 
@@ -148,6 +151,7 @@ class SaveReminderFragment : BaseFragment() {
      * * ACCESS_FINE_LOCATION
      * * ACCESS_BACKGROUND_LOCATION
      */
+
     private fun checkPermissionsAndStartGeofencing() {
         val foregroundLocationApproved = isForegroundPermissionsGranted()
         val backgroundPermissionApproved = isBackgroundPermissionsGranted()
@@ -159,24 +163,28 @@ class SaveReminderFragment : BaseFragment() {
         else
             null
 
-        if (foregroundLocationApproved && backgroundPermissionApproved)
-            checkDeviceLocationSettingsAndStartGeofence()
+        if (foregroundLocationApproved && backgroundPermissionApproved) checkDeviceLocationSettingsAndStartGeofence()
         else permission?.let { requestPermissionLauncher.launch(it) }
 
     }
 
     private fun checkDeviceLocationSettingsAndStartGeofence(resolve: Boolean = true) {
-        val locationRequest = LocationRequest.create().apply {
-            priority = LocationRequest.PRIORITY_LOW_POWER
-        }
+        val locationRequest = LocationRequest.create().apply { priority = LocationRequest.PRIORITY_LOW_POWER }
         val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
         val settingsClient = LocationServices.getSettingsClient(requireContext())
         val locationSettingsResponseTask = settingsClient.checkLocationSettings(builder.build())
+        Log.d(TAG, "checkDeviceLocationSettingsAndStartGeofence: #1")
         locationSettingsResponseTask
             .addOnCompleteListener {
-                if (it.isSuccessful) addNewGeofence()
+                Log.d(TAG, "checkDeviceLocationSettingsAndStartGeofence: #2")
+                Log.d(TAG, "checkDeviceLocationSettingsAndStartGeofence: Geofence Added")
+                if (it.isSuccessful) {
+                    addNewGeofence()
+                    baseViewModel.navigationCommand.value = NavigationCommand.Back
+                }
             }
             .addOnFailureListener { exception ->
+                Log.d(TAG, "checkDeviceLocationSettingsAndStartGeofence: #3")
                 if (exception is ResolvableApiException && resolve) {
                     try {
                         val intentSenderRequest =
@@ -190,6 +198,8 @@ class SaveReminderFragment : BaseFragment() {
                         .show()
                 }
             }
+        Log.d(TAG, "checkDeviceLocationSettingsAndStartGeofence: #4")
+
     }
 
     private fun addNewGeofence() {
