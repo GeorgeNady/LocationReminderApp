@@ -1,5 +1,6 @@
 package com.udacity.project4.ui.locationreminders.savereminder
 
+import android.app.Activity
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -7,35 +8,46 @@ import android.view.WindowManager.LayoutParams.TYPE_TOAST
 import androidx.annotation.IntRange
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.fragment.app.testing.launchFragmentInContainer
+import androidx.lifecycle.Observer
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.test.annotation.UiThreadTest
+import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.Root
 import androidx.test.espresso.ViewInteraction
 import androidx.test.espresso.action.ViewActions
+import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.base.IdlingResourceRegistry
 import androidx.test.espresso.matcher.RootMatchers.withDecorView
 import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.rules.activityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.material.internal.ContextUtils.getActivity
 import com.udacity.project4.R
 import com.udacity.project4.db.LocalDB
 import com.udacity.project4.db.ReminderDataSource
 import com.udacity.project4.db.RemindersLocalRepository
 import com.udacity.project4.ui.locationreminders.RemindersActivity
 import com.udacity.project4.ui.locationreminders.reminderslist.ReminderDataDomain
+import com.udacity.project4.util.DataBindingIdlingResource
+import com.udacity.project4.util.monitorActivity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.hamcrest.Description
+import org.hamcrest.Matcher
+import org.hamcrest.Matchers
 import org.hamcrest.Matchers.not
 import org.hamcrest.TypeSafeMatcher
 import org.hamcrest.core.Is.`is`
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -56,6 +68,7 @@ import org.mockito.Mockito
 class SaveReminderFragmentTest {
 
     private lateinit var saveReminderViewModel: SaveReminderViewModel
+    private val dataBindingIdlingResource = DataBindingIdlingResource()
     private lateinit var decorView: View
 
     private val giza = LatLng(21.000, 20.000)
@@ -93,14 +106,17 @@ class SaveReminderFragmentTest {
         }
 
         activityRule.scenario.onActivity {
-            decorView = it.window.decorView
+            decorView = it.window.decorView.rootView
         }
-
 
         saveReminderViewModel = GlobalContext.get().koin.get()
 
     }
 
+    @After
+    fun stop() {
+        stopKoin()
+    }
 
     @Test
     fun noTitle_fails() {
@@ -131,7 +147,7 @@ class SaveReminderFragmentTest {
     }
 
     @Test
-    fun saveReminder_succeeds()  = runBlockingTest {
+    fun saveReminder_succeeds() {
         val reminder = ReminderDataDomain(
             "Title",
             "Description",
@@ -152,89 +168,11 @@ class SaveReminderFragmentTest {
 
         closeSoftKeyboard()
 
-        runBlocking {
-            saveReminderViewModel.saveReminder(reminder)
-        }
+        saveReminderViewModel.saveReminder(reminder)
 
         assertThat(saveReminderViewModel.showToast.getOrAwaitValue(), `is`("Reminder Saved !"))
-
-        onToast("Reminder Saved !").check(matches(isDisplayed()))
-
-        /*onView(withText("Reminder Saved !"))
-            .inRoot(withDecorView(not(`is`(decorView))))
-            .check(matches(isDisplayed()))*/
-
+        assertThat(saveReminderViewModel.showLoading.getOrAwaitValue(), `is`(false))
 
     }
 
-    @Test
-    fun saveReminder_failed()  = runBlockingTest {
-        val reminder = ReminderDataDomain(
-            null,
-            "Description",
-            "Giza",
-            giza.latitude,
-            giza.longitude
-        )
-
-        val navController = Mockito.mock(NavController::class.java)
-        val scenario =
-            launchFragmentInContainer<SaveReminderFragment>(Bundle.EMPTY, R.style.AppTheme)
-        scenario.onFragment {
-            Navigation.setViewNavController(it.view!!, navController)
-        }
-
-        onView(withId(R.id.reminderDescription)).perform(ViewActions.typeText(reminder.description))
-
-        closeSoftKeyboard()
-
-        runBlocking {
-            saveReminderViewModel.saveReminder(reminder)
-        }
-
-        assertThat(saveReminderViewModel.showToast.getOrAwaitValue(), `is`("Reminder Saved !"))
-
-        // onToast("Reminder Saved !").check(matches(isDisplayed()))
-
-        onView(withText("Reminder Saved !"))
-            .inRoot(withDecorView(not(`is`(decorView))))
-            .check(matches(isDisplayed()))
-
-
-    }
-
-}
-
-fun onToast(
-    text: Int,
-    @IntRange(from = 1) maximumRetries: Int = 5
-): ViewInteraction = onView(withText(text)).inRoot(ToastMatcher(maximumRetries))
-
-fun onToast(
-    text: String,
-    @IntRange(from = 1) maximumRetries: Int = 5
-): ViewInteraction = onView(withText(text)).inRoot(ToastMatcher(maximumRetries))
-
-class ToastMatcher(private val maximumRetries: Int) : TypeSafeMatcher<Root>() {
-
-    private var currentFailures: Int = 0
-
-    override fun describeTo(description: Description?) {
-        description?.appendText("no toast found after")
-    }
-
-    override fun matchesSafely(item: Root?): Boolean {
-        val type: Int? = item?.windowLayoutParams?.get()?.type
-
-        if(TYPE_TOAST == type || TYPE_APPLICATION_OVERLAY == type) {
-            val windowToken = item.decorView.windowToken
-            val appToken = item.decorView.applicationWindowToken
-
-            if(windowToken == appToken) {
-                return true
-            }
-        }
-
-        return ++currentFailures >= maximumRetries
-    }
 }

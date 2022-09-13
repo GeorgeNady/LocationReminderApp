@@ -1,15 +1,19 @@
 package com.udacity.project4
 
+import android.app.Activity
 import android.app.Application
+import android.os.IBinder
 import android.util.Log
+import android.view.WindowManager
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
-import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
+import androidx.test.espresso.Root
 import androidx.test.espresso.action.ViewActions.*
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.RootMatchers.withDecorView
 import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -17,17 +21,23 @@ import androidx.test.rule.ActivityTestRule
 import androidx.test.rule.GrantPermissionRule
 import com.google.firebase.auth.FirebaseAuth
 import com.udacity.project4.db.LocalDB
-import com.udacity.project4.ui.authentication.AuthenticationViewModel
-import com.udacity.project4.ui.locationreminders.RemindersActivity
 import com.udacity.project4.db.ReminderDataSource
 import com.udacity.project4.db.RemindersLocalRepository
+import com.udacity.project4.ui.authentication.AuthenticationViewModel
+import com.udacity.project4.ui.locationreminders.RemindersActivity
 import com.udacity.project4.ui.locationreminders.reminderslist.RemindersListViewModel
 import com.udacity.project4.ui.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.util.DataBindingIdlingResource
 import com.udacity.project4.util.monitorActivity
 import com.udacity.project4.utils.EspressoIdlingResource
+import com.udacity.project4.utils.ToastShower
+import com.udacity.project4.utils.ToastShowerImpl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.hamcrest.Description
+import org.hamcrest.Matchers.`is`
+import org.hamcrest.Matchers.not
+import org.hamcrest.TypeSafeMatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -42,6 +52,7 @@ import org.koin.dsl.module
 import org.koin.test.AutoCloseKoinTest
 import org.koin.test.get
 import org.koin.test.inject
+
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
@@ -174,4 +185,64 @@ class RemindersActivityTest :
         activityScenario.close()
     }
 
+    @Test
+    fun saveReminder_showToastMessage_WorkingFine() = runBlocking {
+        // GIVEN ::
+        val activityScenario = ActivityScenario.launch(RemindersActivity::class.java)
+        dataBindingIdlingResource.monitorActivity(activityScenario)
+
+        // WHEN ::
+        onView(withId(R.id.noDataTextView)).check(matches(isDisplayed()))
+        onView(withId(R.id.addReminderFAB)).perform(click())
+        onView(withId(R.id.reminderTitle)).perform(typeText("test title"))
+        onView(withId(R.id.reminderDescription)).perform(typeText("test description"))
+        onView(withId(R.id.selectLocation)).perform(click())
+        onView(withId(R.id.map)).perform(click())
+        onView(withId(R.id.save_button)).perform(click())
+
+        delay(3000)
+        onView(withId(R.id.saveReminder)).perform(click())
+
+        // THEN ::
+        onView(withText(R.string.reminder_saved))
+            .inRoot(withDecorView(not(`is`(getActivity(activityScenario).window.decorView))))
+            .check(matches(isDisplayed()))
+
+        /*onView(withText(R.string.reminder_saved)).inRoot(ToastMatcher())
+            .check(matches(isDisplayed()))*/
+
+        activityScenario.close()
+    }
+
+    private fun getActivity(activityScenario: ActivityScenario<RemindersActivity>): Activity {
+        lateinit var activity: Activity
+        activityScenario.onActivity {
+            activity = it
+        }
+        return activity
+    }
+
+
+
+}
+
+class ToastMatcher : TypeSafeMatcher<Root?>() {
+
+    override fun describeTo(description: Description) {
+        description.appendText("is toast")
+    }
+
+    override fun matchesSafely(root: Root?): Boolean {
+        root?.let {
+            val type: Int = root.windowLayoutParams.get().type
+            if (type == WindowManager.LayoutParams.TYPE_TOAST) {
+                val windowToken: IBinder = root.decorView.windowToken
+                val appToken: IBinder = root.decorView.applicationWindowToken
+                if (windowToken === appToken) {
+                    //means this window isn't contained by any other windows.
+                }
+            }
+        }
+        return false
+    }
 }
